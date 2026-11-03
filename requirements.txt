@@ -1,0 +1,7 @@
+pandas
+ollama
+datasets
+python-dotenv
+streamlit
+plotly
+tqdm
