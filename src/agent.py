@@ -84,7 +84,7 @@ def add_headlines(answer: str, headlines: list) -> str:
     missing = [h for h in headlines if h not in answer]
     if not missing:
         return answer
-    return "**" + " ".join(missing) + "**\n\n" + answer
+    return "\n\n".join(f"**{h}**" for h in missing) + "\n\n" + answer
 
 
 def main() -> None:
