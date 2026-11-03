@@ -4,7 +4,7 @@ import pandas as pd
 
 aspects = pd.read_csv("data/processed/aspects.csv")
 
-for aspect in ["Ease of use", "Authenticity", "Other"]:
+for aspect in ["Ease of use", "Customer service"]:
     subset = aspects[aspects["aspect"] == aspect]
     print("=" * 60)
     print(f"{aspect} ({len(subset)} mentions)")
