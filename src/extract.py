@@ -38,7 +38,8 @@ Return JSON with:
 Rules:
 - Each evidence phrase may be used for only ONE aspect.
 - Tag as few aspects as needed. Most reviews have 1 to 3 aspects.
-- Use "Other" only if nothing else fits.
+- Do NOT tag general praise or criticism without a specific detail, such as "love it", "great product" or "highly recommend". The overall_sentiment already covers those.
+- Use "Other" only for a specific detail that fits no other category.
 
 Example:
 Review: "Lovely smell but the pump broke after a week and it was overpriced."
