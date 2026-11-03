@@ -20,7 +20,10 @@ def _check_aspect(aspect: str):
     if aspect not in ASPECTS:
         return json.dumps({"error": f"Unknown aspect '{aspect}'. Valid aspects: {ASPECTS}"})
     return None
-
+def _short(text: str, max_words: int = 12) -> str:
+    """Cut long quotes to a readable length."""
+    words = str(text).split()
+    return " ".join(words[:max_words]) + ("..." if len(words) > max_words else "")
 
 def list_aspects() -> str:
     """List every aspect with how often customers mention it, split by sentiment.
@@ -71,8 +74,8 @@ def low_rating_drivers(top_n: int = 5) -> str:
         top_n: How many aspects to return.
 
     Returns:
-        JSON with the number of low rated reviews and, per aspect, the share of
-        those reviews that mention it negatively.
+        JSON with a ready made headline and, per aspect, the share of low rated
+        reviews that mention it negatively.
     """
     low_ids = REVIEWS.loc[REVIEWS["rating"] <= 2, "review_id"]
     low_neg = ASPECT_ROWS[
@@ -81,9 +84,18 @@ def low_rating_drivers(top_n: int = 5) -> str:
     shares = (
         low_neg.groupby("aspect")["review_id"].nunique() / len(low_ids)
     ).sort_values(ascending=False).head(int(top_n))
+
+    if shares.empty:
+        return json.dumps({"headline": "No negative aspect mentions in low rated reviews."})
+
+    top_aspect, top_share = shares.index[0], shares.iloc[0]
+    headline = (
+        f"Of {len(low_ids)} reviews with 1 or 2 stars, {top_share:.0%} criticise "
+        f"{top_aspect.lower()}, the most common complaint."
+    )
     return json.dumps({
-        "low_rated_reviews": int(len(low_ids)),
-        "share_with_negative_mention": shares.round(2).to_dict(),
+        "headline": headline,
+        "share_with_negative_mention": {k: f"{v:.0%}" for k, v in shares.items()},
     })
 
 
@@ -111,6 +123,38 @@ def get_evidence(aspect: str, sentiment: str = "negative", n: int = 5) -> str:
         for _, row in sample.iterrows()
     ])
 
+
+def aspect_report(aspect: str) -> str:
+    """Full picture of one aspect: how customers feel about it, with example quotes.
+    Use this for ANY question about a single aspect, such as scent, price or packaging.
+
+    Args:
+        aspect: The aspect name, for example "Scent" or "Packaging".
+
+    Returns:
+        JSON with a ready made headline, the key numbers, and 2 positive and
+        2 negative customer quotes.
+    """
+    error = _check_aspect(aspect)
+    if error:
+        return error
+
+    summary = json.loads(aspect_summary(aspect))
+    if summary.get("mentions", 0) == 0:
+        return json.dumps({"headline": f"No reviews mention {aspect.lower()}."})
+
+    headline = (
+        f"{summary['share_positive']:.0%} of {summary['mentions']} {aspect.lower()} mentions "
+        f"are positive and {summary['share_negative']:.0%} negative "
+        f"(average rating {summary['avg_rating_when_mentioned']} stars)."
+    )
+    report = {"headline": headline, **summary}
+    for sentiment in ["positive", "negative"]:
+        quotes = json.loads(get_evidence(aspect, sentiment, 2))
+        report[f"{sentiment}_quotes"] = [
+            {"quote": _short(q["evidence"]), "stars": q["rating"]} for q in quotes
+        ]
+    return json.dumps(report)
 
 if __name__ == "__main__":
     print(list_aspects(), "\n")
