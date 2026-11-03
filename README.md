@@ -52,6 +52,22 @@ Version 2 spot check: *Ease of use* X of 15 correct, *Customer service* X of 15 
 
 **Limitations:** a 3B parameter model still over-tags some aspects. Next steps are a hand labelled evaluation set with precision and recall per aspect, and a comparison with larger models.
 
+## Chat with your reviews (AI agent)
+
+![Chat agent](images/chat.png)
+
+A local AI agent answers plain English questions by calling analysis tools on the extracted data, instead of guessing. Every answer shows which tools were used ("How I got this answer").
+
+**Tools:** `aspect_report` (sentiment and quotes for one aspect), `low_rating_drivers` (what drives 1 and 2 star reviews), `list_aspects` (what customers talk about).
+
+**Making a 3B model reliable at tool calling.** The first version followed a multi step prompt badly: it skipped tools, gave no numbers and picked the wrong tool when a question said "examples". The fixes moved logic from the prompt into code:
+- **Higher level tools:** one tool per question type, so the model makes one decision instead of chaining several
+- **Fewer tools:** a tool that kept being chosen wrongly was removed
+- **Numbers computed in code:** each tool returns a ready made headline with percentages
+- **Guardrail:** code checks that the headline is in the final answer and adds it if the model skipped it
+
+**Limitation:** the model sometimes paraphrases quotes instead of copying them word for word.
+
 ## Data
 
 [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) (McAuley Lab, UC San Diego), *All Beauty* category. A random sample of 2,000 reviews with at least 40 characters, from 2002 to 2023. The data is not included in this repo; `load_data.py` downloads it.
